@@ -11,10 +11,10 @@ function asignacionClusters = asignarClusters(datos, centroides)
     distancias = zeros(num_puntos, num_clusters);
     for i = 1:num_clusters
         for j = 1:num_puntos
-	    for o = 1:num_atributos
-    		distancias(j, i) = distancias(j, i) + ((datos(j, o) - centroides(i, o)).^2);
+            for o = 1:num_atributos
+                distancias(j, i) = distancias(j, i) + ((datos(j, o) - centroides(i, o)).^2);
+            end
 	    end
-	end
     end
     
     % Asignar cada punto al cluster más cercano

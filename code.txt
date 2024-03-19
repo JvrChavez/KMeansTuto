@@ -47,19 +47,24 @@ end
 %Asi mandamos a llamar a la funcion
 C=asignarClusters(Datos, centroides);
 
-%funcion para actualizar los centroides ((((((BETA)))))))
-function nuevos_centroides = actualizar_centroides(datos, asignacion_clusters, num_clusters)
+%funcion para actualizar los centroides
+function nuevos_centroides = actualizar_centroides(datos, asignacion_clusters)
+    num_clusters=numel(unique(asignacion_clusters))
     [num_puntos, num_atributos] = size(datos);
     nuevos_centroides = zeros(num_clusters, num_atributos);
 
     for i = 1:num_clusters
-        % Encuentra los índices de los puntos asignados al clúster i
-        puntos_en_cluster = find(asignacion_clusters == i);
-        
-        % Calcula el nuevo centroide como la media de los puntos asignados al clúster
-        if ~isempty(puntos_en_cluster)
-            nuevos_centroides(i, :) = mean(datos(puntos_en_cluster, :), 1);
-        end
+        % Mapeamos los puntos asignados al cluster I
+	puntos_en_cluster = asignacion_clusters == i;
+	puntos_mapeados = datos(puntos_en_cluster,:);
+
+        for j=1:num_atributos
+	    %Calculamos la posicion conforme al promedio de sus puntos
+	    nuevos_centroides(i,j) = mean(datos(puntos_en_cluster, j), 1);
+	end
     end
 end
+
+%Asi mandamos a llamar a la funcion
+newcentroides = actualizar_centroides(Datos, C)
 
