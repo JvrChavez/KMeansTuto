@@ -6,20 +6,24 @@ Casos = csvread( filename );
 %Eliminamos la columna de texto que se pone en 0 pero a su derecha ya dice el numero de clase 
 Casos(:, 5) = [];
 
+%Necesitamos eliminar la columna de clase a Casos
+Datos = Casos(:, [1:5-1, 5+1:end]);
+
 %Funcion para generar centroides
-function centroides = generarCentroides(matriz,numCentroides,numCol)
+function centroides = generarCentroides (matriz,numCentroides,numCol)
+	numCol = size(matriz, 2);
 	centroides= zeros(numCentroides, numCol);
 	for i=1:numCentroides
 		for j=1:numCol
-		rango = max(matriz(:, j)) - min(matriz(:, j));
-		valor_aleatorio = minimo_valor + rango * rand;
-		centroides(i, j) = valor_aleatorio;
+		    rango = max(matriz(:, j)) - min(matriz(:, j));
+		    valor_aleatorio = minimo_valor + rango * rand;
+		    centroides(i, j) = valor_aleatorio;
 		end
 	end    
 end
 
-%Necesitamos eliminar la columna de clase a Casos
-Datos = Casos(:, [1:5-1, 5+1:end]);
+%Mandamos a llamar la funcion generarCentroides (matriz, numCentroides)
+centroides=generarCentroides(Datos,3)
 
 %Funcion para asignar cluster
 function asignacionClusters = asignarClusters(datos, centroides)
@@ -44,7 +48,7 @@ function asignacionClusters = asignarClusters(datos, centroides)
     [~, asignacionClusters] = min(distancias, [], 2);
 end
 
-%Asi mandamos a llamar a la funcion
+%Asi mandamos a llamar a la funcion asignarClusters(datos, centroides)
 C=asignarClusters(Datos, centroides);
 
 %funcion para actualizar los centroides
@@ -65,6 +69,9 @@ function nuevos_centroides = actualizar_centroides(datos, asignacion_clusters)
     end
 end
 
-%Asi mandamos a llamar a la funcion
+%Asi mandamos a llamar a la funcion actualizar_centroides(datos, asignacion_clusters)
 newcentroides = actualizar_centroides(Datos, C)
+
+%Necesitamos crear una funcion que mande a llamar a las funciones dependiendo
+function [clusters,asignacion]= procesoKMeans(datos,)
 
