@@ -3,27 +3,31 @@ addpath 'D:\GitHub\KMeansTuto'
 %Leer un archivo csv (Comma Separated Values)
 filename='iris1.csv'
 Casos = csvread( filename );
-%Eliminamos la columna de texto que se pone en 0 pero a su derecha ya dice el numero de clase 
+%Eliminamos la columna de texto que se pone en 0(era texto) pero a su derecha ya dice el numero de clase 
 Casos(:, 5) = [];
+%Declaramos el numero de centroides
+numCent=3;    
 
 %Necesitamos eliminar la columna de clase a Casos
 Datos = Casos(:, [1:5-1, 5+1:end]);
 
+%Para mandar a llamar a la funcion procesoKMeans (matriz, numCentroides)
+[centroides,C]=procesoKMeans(Datos,numCent);
+
+
 %Funcion para generar centroides
 function centroides = generarCentroides (matriz,numCentroides,numCol)
-	numCol = size(matriz, 2);
-	centroides= zeros(numCentroides, numCol);
-	for i=1:numCentroides
-		for j=1:numCol
-		    rango = max(matriz(:, j)) - min(matriz(:, j));
-		    valor_aleatorio = minimo_valor + rango * rand;
-		    centroides(i, j) = valor_aleatorio;
-		end
-	end    
+    numCol = size(matriz, 2);
+    centroides= zeros(numCentroides, numCol);
+    for i=1:numCentroides
+        for j=1:numCol
+            rango = max(matriz(:, j)) - min(matriz(:, j));
+            valor_aleatorio = minimo_valor + rango * rand;
+            centroides(i, j) = valor_aleatorio;
+        end
+    end    
 end
 
-%Mandamos a llamar la funcion generarCentroides (matriz, numCentroides)
-centroides=generarCentroides(Datos,3)
 
 %Funcion para asignar cluster
 function asignacionClusters = asignarClusters(datos, centroides)
@@ -38,40 +42,61 @@ function asignacionClusters = asignarClusters(datos, centroides)
     distancias = zeros(num_puntos, num_clusters);
     for i = 1:num_clusters
         for j = 1:num_puntos
-	    for o = 1:num_atributos
-    		distancias(j, i) = distancias(j, i) + ((datos(j, o) - centroides(i, o)).^2);
-	    end
-	end
+            for o = 1:num_atributos
+                distancias(j, i) = distancias(j, i) + ((datos(j, o) - centroides(i, o)).^2);
+            end
+        end
     end
     
     % Asignar cada punto al cluster más cercano
     [~, asignacionClusters] = min(distancias, [], 2);
 end
 
-%Asi mandamos a llamar a la funcion asignarClusters(datos, centroides)
-C=asignarClusters(Datos, centroides);
 
 %funcion para actualizar los centroides
-function nuevos_centroides = actualizar_centroides(datos, asignacion_clusters)
-    num_clusters=numel(unique(asignacion_clusters))
+function nuevos_centroides = actualizar_centroides(datos, asignacion_clusters,num_clusters)
     [num_puntos, num_atributos] = size(datos);
     nuevos_centroides = zeros(num_clusters, num_atributos);
 
     for i = 1:num_clusters
         % Mapeamos los puntos asignados al cluster I
-	puntos_en_cluster = asignacion_clusters == i;
-	puntos_mapeados = datos(puntos_en_cluster,:);
+    puntos_en_cluster = asignacion_clusters == i;
+    puntos_mapeados = datos(puntos_en_cluster,:);
 
         for j=1:num_atributos
-	    %Calculamos la posicion conforme al promedio de sus puntos
-	    nuevos_centroides(i,j) = mean(datos(puntos_en_cluster, j), 1);
-	end
+        %Calculamos la posicion conforme al promedio de sus puntos
+        nuevos_centroides(i,j) = mean(datos(puntos_en_cluster, j), 1);
+    end
     end
 end
 
-%Asi mandamos a llamar a la funcion actualizar_centroides(datos, asignacion_clusters)
-newcentroides = actualizar_centroides(Datos, C)
 
-%Necesitamos crear una funcion que mande a llamar a las funciones dependiendo
-function [clusters,asignacion]= procesoKMeans(datos,)
+
+%Funcion que manda a llamar a las demas funciones (matriz, numCentroides)
+function [clusters,asignacion]= procesoKMeans(datos,numCent)
+
+    %Mandamos a llamar la funcion generarCentroides (matriz, numCent)
+    centroides=generarCentroides(datos,numCent);
+
+    move=true; %Flag para saber si cambiaron de lugar los centroides
+    newcentroides=[]; %Declaramos la matriz vacia
+    conteo=0;
+    while move
+        centroides=newcentroides;
+        %Asi mandamos a llamar a la funcion asignarClusters(datos, centroides)
+        C=asignarClusters(datos, centroides);
+
+        %Asi mandamos a llamar a la funcion actualizar_centroides(datos, asignacion_clusters)
+        newcentroides = actualizar_centroides(datos, C,numCent);
+
+        %Corroboramos si se movieron los centroides
+        move = any(centroides(:) ~= newcentroides(:));
+
+        conteo+=1;
+    end
+    disp(['Número de ciclos: ', num2str(conteo)]);
+    clusters=newcentroides;
+    asignacion=C;
+end
+
 

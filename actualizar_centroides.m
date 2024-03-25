@@ -1,6 +1,5 @@
 %funcion para actualizar los centroides
-function nuevos_centroides = actualizar_centroides(datos, asignacion_clusters)
-    num_clusters=numel(unique(asignacion_clusters))
+function nuevos_centroides = actualizar_centroides(datos, asignacion_clusters,num_clusters)
     [num_puntos, num_atributos] = size(datos);
     nuevos_centroides = zeros(num_clusters, num_atributos);
 
