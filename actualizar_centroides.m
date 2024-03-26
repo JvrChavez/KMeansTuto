@@ -5,12 +5,12 @@ function nuevos_centroides = actualizar_centroides(datos, asignacion_clusters,nu
 
     for i = 1:num_clusters
         % Mapeamos los puntos asignados al cluster I
-	puntos_en_cluster = asignacion_clusters == i;
-	puntos_mapeados = datos(puntos_en_cluster,:);
+        puntos_en_cluster = asignacion_clusters == i;
+        puntos_mapeados = datos(puntos_en_cluster,:);
 
         for j=1:num_atributos
-	    %Calculamos la posicion conforme al promedio de sus puntos
-	    nuevos_centroides(i,j) = mean(datos(puntos_en_cluster, j), 1);
-	end
+            %Calculamos la posicion conforme al promedio de sus puntos
+            nuevos_centroides(i,j) = mean(datos(puntos_en_cluster, j), 1);
+        end
     end
 end

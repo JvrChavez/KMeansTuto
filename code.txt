@@ -1,4 +1,4 @@
-%Agregamos el path del archivo csv
+%Agregamos el path del archivo y funciones SIEMPRE AGREGAR PORQUE SE PIERDE SOLO
 addpath 'D:\GitHub\KMeansTuto'
 %Leer un archivo csv (Comma Separated Values)
 filename='iris1.csv'
@@ -12,16 +12,33 @@ numCent=3;
 Datos = Casos(:, [1:5-1, 5+1:end]);
 
 %Para mandar a llamar a la funcion procesoKMeans (matriz, numCentroides)
-[centroides,C]=procesoKMeans(Datos,numCent);
+[centroides,C]=procesoKMeans(Datos,numCent,max_iter,CReal,centroidesReal);
+
+%Mandamos llamar la funcion para calcular aciertos y demas metricas
+calcular_aciertos(CReal,C,numCent);
+
+%----------De aqui en adelante solamente son las funaciones, al final esta la que manda a llamar a todas-------
+
+%Funcion para normalizar los datos
+function norm=normalizar(matriz)
+    norm=zeros(size(matriz));
+    for i=1:size(matriz,2)
+        min_val = min(matriz(:, i));
+        max_val = max(matriz(:, i));
+        norm(:, i) = (matriz(:, i) - min_val) / (max_val - min_val);
+    end
+end
 
 
-%Funcion para generar centroides
 function centroides = generarCentroides (matriz,numCentroides,numCol)
+    %Damos tamaño a la matriz
     numCol = size(matriz, 2);
     centroides= zeros(numCentroides, numCol);
     for i=1:numCentroides
         for j=1:numCol
-            rango = max(matriz(:, j)) - min(matriz(:, j));
+            %Se genera el centroide de manera random dentro del rango de valores
+            minimo_valor=min(matriz(:, j));
+            rango = max(matriz(:, j)) - minimo_valor;
             valor_aleatorio = minimo_valor + rango * rand;
             centroides(i, j) = valor_aleatorio;
         end
@@ -45,7 +62,7 @@ function asignacionClusters = asignarClusters(datos, centroides)
             for o = 1:num_atributos
                 distancias(j, i) = distancias(j, i) + ((datos(j, o) - centroides(i, o)).^2);
             end
-        end
+	    end
     end
     
     % Asignar cada punto al cluster más cercano
@@ -60,43 +77,108 @@ function nuevos_centroides = actualizar_centroides(datos, asignacion_clusters,nu
 
     for i = 1:num_clusters
         % Mapeamos los puntos asignados al cluster I
-    puntos_en_cluster = asignacion_clusters == i;
-    puntos_mapeados = datos(puntos_en_cluster,:);
+        puntos_en_cluster = asignacion_clusters == i;
+        puntos_mapeados = datos(puntos_en_cluster,:);
 
         for j=1:num_atributos
-        %Calculamos la posicion conforme al promedio de sus puntos
-        nuevos_centroides(i,j) = mean(datos(puntos_en_cluster, j), 1);
-    end
+            %Calculamos la posicion conforme al promedio de sus puntos
+            nuevos_centroides(i,j) = mean(datos(puntos_en_cluster, j), 1);
+        end
     end
 end
 
 
+%Funcion para calcular aciertos
+function calcular_aciertos(claseReal,clasePredicha,numCent)
+    %Acumulador de aciertos totales
+    total_TP=0;
+    % Calcularemos para cada clase específica
+    for i=1:numCent
+        j=0;
+        if i == 1
+            j = 2;
+        elseif i == 2
+            j = 1;
+        elseif i == 3
+            j = 3;
+        end
 
-%Funcion que manda a llamar a las demas funciones (matriz, numCentroides)
-function [clusters,asignacion]= procesoKMeans(datos,numCent)
+        % Verdaderos positivos (TP)
+        TP = sum(claseReal == i & clasePredicha == j);
 
-    %Mandamos a llamar la funcion generarCentroides (matriz, numCent)
-    centroides=generarCentroides(datos,numCent);
+        %Acumulando aciertos totales de todas las clases
+        total_TP = total_TP + TP;
+
+        % Falsos positivos (FP)
+        FP = sum(claseReal ~= i & clasePredicha == j);
+
+        % Verdaderos negativos (TN)
+        TN = sum(claseReal ~= i & clasePredicha ~= j);
+
+        % Falsos negativos (FN)
+        FN = sum(claseReal == i & clasePredicha ~= j);
+
+        % Calcular precisión, recall y F-score
+        precision = TP / (TP + FP);
+        recall = TP / (TP + FN);
+        F_score = 2 * ((precision * recall) / (precision + recall));
+
+        % Calcular porcentaje de aciertos totales
+        total_clase=claseReal == i;
+        total_aciertos = sum(claseReal == i & clasePredicha == j) / sum(claseReal == i) * 100;
+
+        disp(['El resultado de la clase ', num2str(i)]);
+        disp(['Porcentaje de aciertos: ', num2str(total_aciertos)]);
+        disp(['Precision: ', num2str(precision)]);
+        disp(['Recall: ', num2str(recall)]);
+        disp(['F-Score: ', num2str(F_score)]);
+
+    end
+    % Calcular el porcentaje de aciertos totales de todas las clases
+    total_aciertos = total_TP / numel(claseReal) * 100;
+    disp(["Porcentaje de aciertos totales: ",num2str(total_aciertos)]);
+end
+
+
+%Funcion que manda a llamar a las demas funciones :matriz, numCentroides
+function [clusters,C]= procesoKMeans(datos,numCent,max_iter,CReal,centroidesReal)
+
+    %Se manda a llamar la normalizacion de los datos
+    norm=normalizar(datos);
+
+    %Mandamos a llamar la funcion generarCentroides: matriz, numCent
+    centroides=generarCentroides(norm,numCent);
 
     move=true; %Flag para saber si cambiaron de lugar los centroides
     newcentroides=[]; %Declaramos la matriz vacia
     conteo=0;
-    while move
-        centroides=newcentroides;
-        %Asi mandamos a llamar a la funcion asignarClusters(datos, centroides)
-        C=asignarClusters(datos, centroides);
+    
+    %max_iter es la clausula de escape para que no sea infinito por algun error
+    while move && conteo < max_iter
+        
+        %Asi mandamos a llamar a la funcion asignarClusters:datos, centroides
+        C=asignarClusters(norm, centroides);
 
-        %Asi mandamos a llamar a la funcion actualizar_centroides(datos, asignacion_clusters)
-        newcentroides = actualizar_centroides(datos, C,numCent);
+        %Asi mandamos a llamar a la funcion actualizar_centroides:datos, asignacion_clusters
+        newcentroides = actualizar_centroides(norm, C,numCent);
 
         %Corroboramos si se movieron los centroides
         move = any(centroides(:) ~= newcentroides(:));
+        centroides=newcentroides;
 
-        conteo+=1;
+        conteo++;
+        disp(['Ciclo #', num2str(conteo)]);
     end
-    disp(['Número de ciclos: ', num2str(conteo)]);
+
+     if conteo == max_iter
+        disp('Se alcanzó el número máximo de iteraciones.');
+    else
+        disp(['Numero de ciclos: ', num2str(conteo)]);
+    end
+
+    %Se declara a la variable de salida
     clusters=newcentroides;
-    asignacion=C;
+
+    %por ultimo se grafica
+    graficar(norm,C,CReal,clusters,centroidesReal);
 end
-
-
